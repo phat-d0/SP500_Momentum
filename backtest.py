@@ -15,28 +15,32 @@ alpaca = REST(APCA_API_KEY, APCA_SECRET, APCA_API_BASE_URL)
 
 
 # 2. Fetch Historical Data
-def fetch_alpaca_historical_data(symbols, start_date, end_date, timeframe='1D'):
+def fetch_alpaca_historical_data(symbols, start_date, end_date, timeframe='1Min'):
     """
     Fetch historical data for a list of symbols from Alpaca.
     Args:
         symbols (list): List of stock symbols.
         start_date (str): Start date in 'YYYY-MM-DD' format.
         end_date (str): End date in 'YYYY-MM-DD' format.
-        timeframe (str): Timeframe for bars (e.g., '1D', '1Min').
+        timeframe (str): Timeframe for bars (e.g., '1Min').
     Returns:
         dict: A dictionary of DataFrames for each symbol.
     """
     historical_data = {}
+    market_open = time(9, 30)  # 9:30 AM
+    market_close = time(16, 0)  # 4:00 PM
+
     for symbol in symbols:
         try:
             bars = alpaca.get_bars(symbol, timeframe, start=start_date, end=end_date).df
-            bars.index = pd.to_datetime(bars.index)
+            bars.index = pd.to_datetime(bars.index)  # Ensure datetime format
+            # Filter for regular market hours
+            bars = bars[(bars.index.time >= market_open) & (bars.index.time <= market_close)]
             historical_data[symbol] = bars[['open', 'close', 'high', 'low', 'volume']]
             time.sleep(0.25)  # Avoid hitting API rate limits
         except Exception as e:
             print(f"Error fetching data for {symbol}: {e}")
     return historical_data
-
 
 # 3. Strategy Logic
 def calculate_percentage_change(previous_close, today_open):
