@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime, deltatime
 import pandas as pd
 from dotenv import load_dotenv
 import csv
@@ -196,7 +197,7 @@ if __name__ == "__main__":
 
     # Fetch historical data
     start_date = "2023-01-01"
-    end_date = "2023-12-31"
+    end_date = datetime.today().strftime('%Y-%m-%d')
     historical_data = fetch_alpaca_historical_data(symbols, start_date, end_date)
 
     # Run backtest
