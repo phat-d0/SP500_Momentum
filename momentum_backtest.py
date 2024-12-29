@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import datetime, deltatime
+from datetime import datetime, timedelta
 import pandas as pd
 from dotenv import load_dotenv
 import csv
@@ -16,27 +16,25 @@ alpaca = REST(APCA_API_KEY, APCA_SECRET, APCA_API_BASE_URL)
 
 
 # 2. Fetch Historical Data
-def fetch_alpaca_historical_data(symbols, start_date, end_date, timeframe='1Min'):
+def fetch_alpaca_historical_data(symbols, start_date, end_date, timeframe='1D'):
     """
     Fetch historical data for a list of symbols from Alpaca.
     Args:
         symbols (list): List of stock symbols.
         start_date (str): Start date in 'YYYY-MM-DD' format.
         end_date (str): End date in 'YYYY-MM-DD' format.
-        timeframe (str): Timeframe for bars (e.g., '1Min').
+        timeframe (str): Timeframe for bars (e.g., '1D').
     Returns:
         dict: A dictionary of DataFrames for each symbol.
     """
     historical_data = {}
-    market_open = time(9, 30)  # 9:30 AM
-    market_close = time(16, 0)  # 4:00 PM
 
     for symbol in symbols:
         try:
+            # Fetch daily data from Alpaca
             bars = alpaca.get_bars(symbol, timeframe, start=start_date, end=end_date).df
             bars.index = pd.to_datetime(bars.index)  # Ensure datetime format
-            # Filter for regular market hours
-            bars = bars[(bars.index.time >= market_open) & (bars.index.time <= market_close)]
+            # Keep only relevant columns
             historical_data[symbol] = bars[['open', 'close', 'high', 'low', 'volume']]
             time.sleep(0.25)  # Avoid hitting API rate limits
         except Exception as e:
@@ -106,7 +104,7 @@ def close_positions_and_log(portfolio, prices, date, trade_log_file):
 
 
 # 6. Backtesting Function (Updated with Closing Trades)
-def backtest(historical_data, cash=100000, allocation_pct=1, trade_log_file="trades_log.csv"):
+def backtest(historical_data, cash=100000, allocation_pct=0.25, trade_log_file="trades_log.csv"):
     portfolio = []
     pnl_history = []
     cash_balance = cash
@@ -196,7 +194,7 @@ if __name__ == "__main__":
         symbols = [line.strip() for line in f.readlines()]
 
     # Fetch historical data
-    start_date = "2023-01-01"
+    start_date = "2024-01-01"
     end_date = datetime.today().strftime('%Y-%m-%d')
     historical_data = fetch_alpaca_historical_data(symbols, start_date, end_date)
 
